@@ -294,6 +294,15 @@
   <!-- ── TAB: VOZ ── -->
   <div id="tab-voice" class="tab-panel active">
 
+    <!-- Usuario (voz) -->
+    <div class="form-group">
+      <label>👤 ¿Quién gasta?</label>
+      <div class="user-selector">
+        <button class="user-btn" id="vbtn-Fe"   onclick="selectVoiceUser('Fe')">👩 Fe</button>
+        <button class="user-btn" id="vbtn-Pepe" onclick="selectVoiceUser('Pepe')">👨 Pepe</button>
+      </div>
+    </div>
+
     <div class="record-area">
       <button id="recordBtn" title="Toca para grabar">🎤</button>
       <span id="statusText">Toca para grabar</span>
@@ -340,9 +349,9 @@
       <label>💳 Tipo de pago</label>
       <div class="payment-options">
         <button class="pay-btn" onclick="selectPago('Efectivo', this)">💵 Efectivo</button>
-        <button class="pay-btn" onclick="selectPago('Tarjeta', this)">💳 Tarjeta</button>
-        <button class="pay-btn" onclick="selectPago('Yape/Plin', this)">📱 Yape / Plin</button>
+        <button class="pay-btn" onclick="selectPago('Tarjeta de Crédito', this)">💳 Tarjeta de Crédito</button>
         <button class="pay-btn" onclick="selectPago('Transferencia', this)">🏦 Transferencia</button>
+        <button class="pay-btn" onclick="selectPago('Yape', this)">📱 Yape</button>
       </div>
     </div>
 
@@ -383,8 +392,9 @@
   let seconds       = 0;
   const historyData = [];
 
-  let selectedUser  = '';
-  let selectedPago  = '';
+  let selectedUser      = '';
+  let selectedVoiceUser = '';
+  let selectedPago      = '';
 
   // ── TABS ──────────────────────────────────────────────────
   function switchTab(tab, btn) {
@@ -414,7 +424,7 @@
         audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         stream.getTracks().forEach(t => t.stop());
         document.getElementById('transcript').textContent = '(Audio listo — toca "Registrar gasto")';
-        document.getElementById('sendVoiceBtn').disabled = false;
+        validateVoiceForm();
       };
       mediaRecorder.start();
       document.getElementById('recordBtn').classList.add('recording');
@@ -440,9 +450,22 @@
     document.getElementById('statusText').textContent = 'Toca para grabar de nuevo';
   }
 
+  // ── VOICE USER ────────────────────────────────────────────
+  function selectVoiceUser(name) {
+    selectedVoiceUser = name;
+    document.querySelectorAll('#tab-voice .user-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('vbtn-' + name).classList.add('selected');
+    validateVoiceForm();
+  }
+
+  function validateVoiceForm() {
+    document.getElementById('sendVoiceBtn').disabled = !(audioBlob && selectedVoiceUser);
+  }
+
   // ── SEND VOICE ────────────────────────────────────────────
   async function sendVoice() {
     if (!audioBlob) return;
+    if (!selectedVoiceUser) { showResult('error', '⚠️ Selecciona quién gasta (Fe o Pepe)'); return; }
     if (!WEBHOOK_URL) { showResult('error', '⚠️ Configura la URL del webhook (botón ⚙️)'); return; }
 
     const btn = document.getElementById('sendVoiceBtn');
@@ -453,6 +476,7 @@
       const formData = new FormData();
       formData.append('audio', audioBlob, 'gasto.webm');
       formData.append('tipo_entrada', 'voz');
+      formData.append('usuario', selectedVoiceUser);
       formData.append('timestamp', new Date().toISOString());
 
       const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
@@ -483,7 +507,7 @@
   // ── MANUAL FORM ───────────────────────────────────────────
   function selectUser(name) {
     selectedUser = name;
-    document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('#tab-manual .user-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('btn-' + name).classList.add('selected');
     validateManualForm();
   }
@@ -536,7 +560,7 @@
       // Reset
       document.getElementById('manualMonto').value = '';
       document.getElementById('manualDesc').value  = '';
-      document.querySelectorAll('.user-btn, .pay-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('#tab-manual .user-btn, #tab-manual .pay-btn').forEach(b => b.classList.remove('selected'));
       selectedUser = '';
       selectedPago = '';
       btn.textContent = 'Registrar gasto →';
