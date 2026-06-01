@@ -15,57 +15,79 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 16px;
+      padding: 24px 16px 40px;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    header h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #f8fafc;
-    }
-
-    header p {
-      font-size: 0.9rem;
-      color: #94a3b8;
-      margin-top: 4px;
-    }
+    header { text-align: center; margin-bottom: 24px; }
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+    header p  { font-size: 0.9rem; color: #94a3b8; margin-top: 4px; }
 
     .card {
       background: #1e293b;
       border-radius: 20px;
       padding: 28px 24px;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
 
-    /* Record button */
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 24px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .tab-btn.active { background: #6366f1; color: white; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    /* ── VOICE TAB ── */
     .record-area {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 28px;
+      gap: 14px;
+      margin-bottom: 24px;
     }
 
     #recordBtn {
-      width: 100px;
-      height: 100px;
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
       border: none;
       cursor: pointer;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
-      transition: transform 0.15s, box-shadow 0.3s;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.4rem;
+      font-size: 2.2rem;
+      transition: transform 0.15s;
     }
 
     #recordBtn:hover { transform: scale(1.05); }
@@ -81,81 +103,88 @@
       100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
     }
 
-    #statusText {
-      font-size: 0.95rem;
-      color: #94a3b8;
-      min-height: 22px;
-    }
-
-    #timer {
-      font-size: 0.85rem;
-      color: #ef4444;
-      min-height: 20px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Transcript */
-    .section-label {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #64748b;
-      margin-bottom: 8px;
-    }
+    #statusText { font-size: 0.92rem; color: #94a3b8; }
+    #timer { font-size: 0.85rem; color: #ef4444; min-height: 18px; font-variant-numeric: tabular-nums; }
 
     #transcript {
       background: #0f172a;
       border-radius: 12px;
       padding: 14px;
-      min-height: 64px;
-      font-size: 0.95rem;
+      min-height: 60px;
+      font-size: 0.92rem;
       color: #cbd5e1;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       line-height: 1.5;
     }
 
-    /* Result */
-    #resultBox {
-      display: none;
-      background: #0f172a;
+    /* ── MANUAL FORM ── */
+    .form-group { margin-bottom: 16px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .user-selector { display: flex; gap: 10px; }
+
+    .user-btn {
+      flex: 1;
+      padding: 12px;
       border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 20px;
-    }
-
-    #resultBox.success { border-left: 4px solid #22c55e; }
-    #resultBox.error   { border-left: 4px solid #ef4444; }
-
-    #resultBox p { font-size: 0.9rem; color: #94a3b8; }
-    #resultBox strong { color: #f1f5f9; }
-
-    /* History */
-    #history {
-      margin-top: 8px;
-    }
-
-    .history-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #1e293b;
-    }
-
-    .history-item:last-child { border-bottom: none; }
-
-    .hi-left { font-size: 0.88rem; color: #cbd5e1; }
-    .hi-right { font-size: 0.9rem; font-weight: 600; color: #6366f1; white-space: nowrap; margin-left: 12px; }
-
-    .empty-history {
+      border: 2px solid #334155;
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
       text-align: center;
-      color: #475569;
-      font-size: 0.88rem;
-      padding: 12px 0;
     }
 
-    /* Send button */
-    #sendBtn {
+    .user-btn:hover { border-color: #6366f1; color: #f1f5f9; }
+    .user-btn.selected { border-color: #6366f1; background: #6366f120; color: #a5b4fc; }
+
+    .form-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .form-input:focus { border-color: #6366f1; }
+    .form-input::placeholder { color: #475569; }
+
+    .payment-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .pay-btn {
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1.5px solid #334155;
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .pay-btn:hover { border-color: #6366f1; color: #f1f5f9; }
+    .pay-btn.selected { border-color: #6366f1; background: #6366f120; color: #a5b4fc; }
+
+    /* ── SHARED BUTTONS ── */
+    .send-btn {
       width: 100%;
       padding: 14px;
       border-radius: 12px;
@@ -165,93 +194,173 @@
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      margin-bottom: 12px;
+      margin-top: 4px;
       transition: opacity 0.2s;
     }
 
-    #sendBtn:disabled { opacity: 0.45; cursor: not-allowed; }
-    #sendBtn:not(:disabled):hover { opacity: 0.9; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .send-btn:not(:disabled):hover { opacity: 0.88; }
 
-    /* Webhook config */
-    .config-toggle {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .config-toggle button {
-      background: none;
-      border: none;
-      color: #64748b;
-      font-size: 0.8rem;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    #configPanel {
+    /* ── RESULT ── */
+    #resultBox {
       display: none;
-      margin-top: 14px;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 16px;
     }
+
+    #resultBox.success { background: #14532d30; border-left: 4px solid #22c55e; }
+    #resultBox.error   { background: #7f1d1d30; border-left: 4px solid #ef4444; }
+    #resultBox p { font-size: 0.9rem; color: #94a3b8; line-height: 1.5; }
+    #resultBox strong { color: #f1f5f9; }
+
+    /* ── HISTORY ── */
+    .divider { border: none; border-top: 1px solid #334155; margin: 24px 0 18px; }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e293b;
+      gap: 8px;
+    }
+
+    .history-item:last-child { border-bottom: none; }
+    .hi-left { font-size: 0.85rem; color: #cbd5e1; line-height: 1.6; }
+
+    .hi-badge {
+      font-size: 0.72rem;
+      background: #1e3a5f;
+      color: #7dd3fc;
+      border-radius: 6px;
+      padding: 2px 7px;
+      margin-right: 4px;
+    }
+
+    .hi-right { font-size: 0.9rem; font-weight: 700; color: #6366f1; white-space: nowrap; }
+    .empty-history { text-align: center; color: #475569; font-size: 0.88rem; padding: 10px 0; }
+
+    /* ── CONFIG ── */
+    .config-toggle { text-align: center; margin-top: 20px; }
+    .config-toggle button {
+      background: none; border: none; color: #475569;
+      font-size: 0.8rem; cursor: pointer; text-decoration: underline;
+    }
+
+    #configPanel { display: none; margin-top: 12px; }
 
     #configPanel input {
       width: 100%;
       background: #0f172a;
-      border: 1px solid #334155;
+      border: 1.5px solid #334155;
       border-radius: 10px;
       padding: 10px 12px;
       color: #f1f5f9;
       font-size: 0.85rem;
       margin-bottom: 8px;
+      outline: none;
     }
-
-    #configPanel input::placeholder { color: #475569; }
 
     #saveConfigBtn {
       width: 100%;
       padding: 10px;
       border-radius: 10px;
-      border: 1px solid #6366f1;
+      border: 1.5px solid #6366f1;
       background: transparent;
       color: #6366f1;
       font-size: 0.9rem;
       cursor: pointer;
     }
 
-    #saveConfigBtn:hover { background: #6366f120; }
+    #saveConfigBtn:hover { background: #6366f115; }
   </style>
 </head>
 <body>
 
 <header>
   <h1>🎤 Gastos por Voz</h1>
-  <p>Registra tus gastos hablando</p>
+  <p>Registra tus gastos hablando o manualmente</p>
 </header>
 
 <div class="card">
 
-  <!-- Record -->
-  <div class="record-area">
-    <button id="recordBtn" title="Mantén presionado para grabar">🎤</button>
-    <span id="statusText">Toca para grabar</span>
-    <span id="timer"></span>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('voice', this)">🎤 Por voz</button>
+    <button class="tab-btn"        onclick="switchTab('manual', this)">✏️ Manual</button>
   </div>
 
-  <!-- Transcript -->
-  <p class="section-label">Lo que dijiste</p>
-  <div id="transcript">—</div>
+  <!-- ── TAB: VOZ ── -->
+  <div id="tab-voice" class="tab-panel active">
 
-  <!-- Send -->
-  <button id="sendBtn" disabled>Registrar gasto →</button>
+    <div class="record-area">
+      <button id="recordBtn" title="Toca para grabar">🎤</button>
+      <span id="statusText">Toca para grabar</span>
+      <span id="timer"></span>
+    </div>
 
-  <!-- Result -->
-  <div id="resultBox">
-    <p id="resultText"></p>
+    <p class="section-label">Lo que dijiste</p>
+    <div id="transcript">—</div>
+
+    <button class="send-btn" id="sendVoiceBtn" disabled onclick="sendVoice()">
+      Registrar gasto →
+    </button>
+
   </div>
 
-  <!-- History -->
+  <!-- ── TAB: MANUAL ── -->
+  <div id="tab-manual" class="tab-panel">
+
+    <!-- Usuario -->
+    <div class="form-group">
+      <label>👤 ¿Quién gasta?</label>
+      <div class="user-selector">
+        <button class="user-btn" id="btn-Fe"   onclick="selectUser('Fe')">👩 Fe</button>
+        <button class="user-btn" id="btn-Pepe" onclick="selectUser('Pepe')">👨 Pepe</button>
+      </div>
+    </div>
+
+    <!-- Monto -->
+    <div class="form-group">
+      <label>💰 Monto (S/.)</label>
+      <input class="form-input" id="manualMonto" type="number" min="0" step="0.01"
+             placeholder="Ej: 25.50" oninput="validateManualForm()" />
+    </div>
+
+    <!-- Descripción -->
+    <div class="form-group">
+      <label>📝 Descripción</label>
+      <input class="form-input" id="manualDesc" type="text"
+             placeholder="Ej: Almuerzo en el mercado" oninput="validateManualForm()" />
+    </div>
+
+    <!-- Tipo de pago -->
+    <div class="form-group">
+      <label>💳 Tipo de pago</label>
+      <div class="payment-options">
+        <button class="pay-btn" onclick="selectPago('Efectivo', this)">💵 Efectivo</button>
+        <button class="pay-btn" onclick="selectPago('Tarjeta', this)">💳 Tarjeta</button>
+        <button class="pay-btn" onclick="selectPago('Yape/Plin', this)">📱 Yape / Plin</button>
+        <button class="pay-btn" onclick="selectPago('Transferencia', this)">🏦 Transferencia</button>
+      </div>
+    </div>
+
+    <button class="send-btn" id="sendManualBtn" disabled onclick="sendManual()">
+      Registrar gasto →
+    </button>
+
+  </div>
+
+  <!-- RESULT (compartido) -->
+  <div id="resultBox"><p id="resultText"></p></div>
+
+  <!-- HISTORY -->
+  <hr class="divider" />
   <p class="section-label">Últimos registros</p>
   <div id="history"><p class="empty-history">Aún no hay registros en esta sesión</p></div>
 
-  <!-- Webhook config -->
+  <!-- CONFIG -->
   <div class="config-toggle">
     <button onclick="toggleConfig()">⚙️ Configurar webhook</button>
   </div>
@@ -263,30 +372,31 @@
 </div>
 
 <script>
-  // ─── CONFIG ────────────────────────────────────────────────
-  // Reemplaza con tu URL de n8n, o configúrala desde la app ↓
+  // ── CONFIG ────────────────────────────────────────────────
   let WEBHOOK_URL = localStorage.getItem('n8n_webhook') || '';
 
-  // ─── STATE ─────────────────────────────────────────────────
+  // ── STATE ─────────────────────────────────────────────────
   let mediaRecorder = null;
   let audioChunks   = [];
   let audioBlob     = null;
   let timerInterval = null;
   let seconds       = 0;
-  const history     = [];
+  const historyData = [];
 
-  // ─── ELEMENTS ──────────────────────────────────────────────
-  const recordBtn   = document.getElementById('recordBtn');
-  const statusText  = document.getElementById('statusText');
-  const timerEl    = document.getElementById('timer');
-  const transcript  = document.getElementById('transcript');
-  const sendBtn     = document.getElementById('sendBtn');
-  const resultBox   = document.getElementById('resultBox');
-  const resultText  = document.getElementById('resultText');
-  const historyEl   = document.getElementById('history');
+  let selectedUser  = '';
+  let selectedPago  = '';
 
-  // ─── RECORD ────────────────────────────────────────────────
-  recordBtn.addEventListener('click', async () => {
+  // ── TABS ──────────────────────────────────────────────────
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    hideResult();
+  }
+
+  // ── RECORD ────────────────────────────────────────────────
+  document.getElementById('recordBtn').addEventListener('click', async () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       stopRecording();
     } else {
@@ -299,114 +409,178 @@
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
       mediaRecorder = new MediaRecorder(stream);
-
       mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
       mediaRecorder.onstop = () => {
         audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         stream.getTracks().forEach(t => t.stop());
-        transcript.textContent = '🔄 Procesando audio localmente...';
-        sendBtn.disabled = false;
-        simulateTranscript(); // En producción: envía al webhook directamente
+        document.getElementById('transcript').textContent = '(Audio listo — toca "Registrar gasto")';
+        document.getElementById('sendVoiceBtn').disabled = false;
       };
-
       mediaRecorder.start();
-      recordBtn.classList.add('recording');
-      recordBtn.textContent = '⏹';
-      statusText.textContent = 'Grabando... toca para detener';
+      document.getElementById('recordBtn').classList.add('recording');
+      document.getElementById('recordBtn').textContent = '⏹';
+      document.getElementById('statusText').textContent = 'Grabando... toca para detener';
       seconds = 0;
       timerInterval = setInterval(() => {
         seconds++;
-        timerEl.textContent = formatTime(seconds);
+        document.getElementById('timer').textContent = formatTime(seconds);
         if (seconds >= 60) stopRecording();
       }, 1000);
-
     } catch (err) {
-      statusText.textContent = '❌ Sin acceso al micrófono';
-      console.error(err);
+      document.getElementById('statusText').textContent = '❌ Sin acceso al micrófono';
     }
   }
 
   function stopRecording() {
     if (mediaRecorder) mediaRecorder.stop();
     clearInterval(timerInterval);
-    timerEl.textContent = '';
-    recordBtn.classList.remove('recording');
-    recordBtn.textContent = '🎤';
-    statusText.textContent = 'Toca para grabar de nuevo';
+    document.getElementById('timer').textContent = '';
+    document.getElementById('recordBtn').classList.remove('recording');
+    document.getElementById('recordBtn').textContent = '🎤';
+    document.getElementById('statusText').textContent = 'Toca para grabar de nuevo';
   }
 
-  // Demo: muestra placeholder; el webhook real transcribirá el audio
-  function simulateTranscript() {
-    setTimeout(() => {
-      transcript.textContent = '(Audio grabado — listo para enviar al webhook de n8n)';
-    }, 600);
-  }
-
-  // ─── SEND ──────────────────────────────────────────────────
-  sendBtn.addEventListener('click', async () => {
+  // ── SEND VOICE ────────────────────────────────────────────
+  async function sendVoice() {
     if (!audioBlob) return;
+    if (!WEBHOOK_URL) { showResult('error', '⚠️ Configura la URL del webhook (botón ⚙️)'); return; }
 
-    if (!WEBHOOK_URL) {
-      showResult('error', '⚠️ Configura la URL del webhook primero (botón ⚙️ abajo)');
-      return;
-    }
-
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'Enviando...';
-    statusText.textContent = 'Enviando a n8n...';
+    const btn = document.getElementById('sendVoiceBtn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
 
     try {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'gasto.webm');
+      formData.append('tipo_entrada', 'voz');
       formData.append('timestamp', new Date().toISOString());
 
       const res = await fetch(WEBHOOK_URL, { method: 'POST', body: formData });
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       let data = {};
       try { data = await res.json(); } catch (_) {}
 
-      const label   = data.categoria   || '—';
       const monto   = data.monto       ? `S/. ${data.monto}` : '—';
-      const detalle = data.descripcion || 'Gasto registrado';
+      const desc    = data.descripcion || 'Gasto registrado';
+      const usuario = data.usuario     || '—';
 
-      showResult('success', `✅ <strong>${detalle}</strong><br>Categoría: ${label} · ${monto}`);
-      addToHistory(detalle, monto);
+      showResult('success', `✅ <strong>${desc}</strong><br>Usuario: ${usuario} · ${data.categoria || ''} · ${monto}`);
+      addToHistory({ desc, monto, usuario, metodo: '🎤 voz', pago: data.tipo_pago || '—' });
 
-      transcript.textContent = data.transcripcion || transcript.textContent;
+      document.getElementById('transcript').textContent = data.transcripcion || '—';
       audioBlob = null;
-      sendBtn.textContent = 'Registrar gasto →';
-      statusText.textContent = 'Toca para grabar';
+      btn.textContent = 'Registrar gasto →';
+      document.getElementById('statusText').textContent = 'Toca para grabar';
 
     } catch (err) {
-      showResult('error', `❌ Error al enviar: ${err.message}`);
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Registrar gasto →';
+      showResult('error', `❌ Error: ${err.message}`);
+      btn.disabled = false;
+      btn.textContent = 'Registrar gasto →';
     }
-  });
-
-  // ─── HELPERS ───────────────────────────────────────────────
-  function showResult(type, html) {
-    resultBox.className = type;
-    resultText.innerHTML = html;
-    resultBox.style.display = 'block';
   }
 
-  function addToHistory(desc, monto) {
-    history.unshift({ desc, monto, time: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) });
-    if (history.length > 10) history.pop();
+  // ── MANUAL FORM ───────────────────────────────────────────
+  function selectUser(name) {
+    selectedUser = name;
+    document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('btn-' + name).classList.add('selected');
+    validateManualForm();
+  }
+
+  function selectPago(tipo, el) {
+    selectedPago = tipo;
+    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    validateManualForm();
+  }
+
+  function validateManualForm() {
+    const monto = document.getElementById('manualMonto').value;
+    const desc  = document.getElementById('manualDesc').value.trim();
+    document.getElementById('sendManualBtn').disabled =
+      !(selectedUser && monto && parseFloat(monto) > 0 && desc && selectedPago);
+  }
+
+  async function sendManual() {
+    if (!WEBHOOK_URL) { showResult('error', '⚠️ Configura la URL del webhook (botón ⚙️)'); return; }
+
+    const monto = document.getElementById('manualMonto').value;
+    const desc  = document.getElementById('manualDesc').value.trim();
+    const btn   = document.getElementById('sendManualBtn');
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      const payload = {
+        tipo_entrada: 'manual',
+        usuario:      selectedUser,
+        monto:        parseFloat(monto),
+        descripcion:  desc,
+        tipo_pago:    selectedPago,
+        timestamp:    new Date().toISOString()
+      };
+
+      const res = await fetch(WEBHOOK_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      showResult('success', `✅ <strong>${desc}</strong><br>Usuario: ${selectedUser} · ${selectedPago} · S/. ${parseFloat(monto).toFixed(2)}`);
+      addToHistory({ desc, monto: `S/. ${parseFloat(monto).toFixed(2)}`, usuario: selectedUser, metodo: '✏️ manual', pago: selectedPago });
+
+      // Reset
+      document.getElementById('manualMonto').value = '';
+      document.getElementById('manualDesc').value  = '';
+      document.querySelectorAll('.user-btn, .pay-btn').forEach(b => b.classList.remove('selected'));
+      selectedUser = '';
+      selectedPago = '';
+      btn.textContent = 'Registrar gasto →';
+
+    } catch (err) {
+      showResult('error', `❌ Error: ${err.message}`);
+      btn.disabled = false;
+      btn.textContent = 'Registrar gasto →';
+    }
+  }
+
+  // ── HELPERS ───────────────────────────────────────────────
+  function showResult(type, html) {
+    const box = document.getElementById('resultBox');
+    box.className = type;
+    document.getElementById('resultText').innerHTML = html;
+    box.style.display = 'block';
+  }
+
+  function hideResult() {
+    document.getElementById('resultBox').style.display = 'none';
+  }
+
+  function addToHistory({ desc, monto, usuario, metodo, pago }) {
+    historyData.unshift({
+      desc, monto, usuario, metodo, pago,
+      time: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+    });
+    if (historyData.length > 10) historyData.pop();
     renderHistory();
   }
 
   function renderHistory() {
-    if (!history.length) {
-      historyEl.innerHTML = '<p class="empty-history">Aún no hay registros en esta sesión</p>';
+    const el = document.getElementById('history');
+    if (!historyData.length) {
+      el.innerHTML = '<p class="empty-history">Aún no hay registros en esta sesión</p>';
       return;
     }
-    historyEl.innerHTML = history.map(h =>
+    el.innerHTML = historyData.map(h =>
       `<div class="history-item">
-        <div class="hi-left">${h.time} · ${h.desc}</div>
+        <div class="hi-left">
+          <span class="hi-badge">${h.usuario}</span><span class="hi-badge">${h.pago}</span><span class="hi-badge">${h.metodo}</span><br>
+          ${h.time} · ${h.desc}
+        </div>
         <div class="hi-right">${h.monto}</div>
       </div>`
     ).join('');
@@ -417,13 +591,11 @@
     return `${String(m).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   }
 
-  // ─── CONFIG PANEL ──────────────────────────────────────────
+  // ── CONFIG PANEL ──────────────────────────────────────────
   function toggleConfig() {
     const p = document.getElementById('configPanel');
     p.style.display = p.style.display === 'block' ? 'none' : 'block';
-    if (p.style.display === 'block') {
-      document.getElementById('webhookInput').value = WEBHOOK_URL;
-    }
+    if (p.style.display === 'block') document.getElementById('webhookInput').value = WEBHOOK_URL;
   }
 
   function saveConfig() {
@@ -432,7 +604,7 @@
       WEBHOOK_URL = url;
       localStorage.setItem('n8n_webhook', url);
       toggleConfig();
-      showResult('success', '✅ Webhook guardado correctamente');
+      showResult('success', '✅ Webhook guardado');
     }
   }
 </script>
