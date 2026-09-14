@@ -101,6 +101,14 @@
     .mini { margin-left: auto; background: #0f172a; border: none; color: #94a3b8; font-size: 1.1rem; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; }
     .mini:disabled { opacity: 0.5; }
     .fuente { font-size: 0.76rem; color: #64748b; margin: -6px 0 4px; }
+    #cardUltimos { padding: 18px 14px; }
+    .grupos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+    .grupo { min-width: 0; }
+    .grupo h3 { font-size: 0.76rem; font-weight: 700; color: #cbd5e1; padding-bottom: 5px; border-bottom: 1px solid #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .grupo .recientes li { display: block; padding: 7px 0; font-size: 0.8rem; line-height: 1.3; }
+    .grupo .recientes .hora { display: block; min-width: 0; font-size: 0.7rem; color: #94a3b8; }
+    .grupo .recientes .txt { display: block; overflow-wrap: anywhere; }
+    .grupo .recientes .vacio { font-size: 0.74rem; }
 
     .config input { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 0.9rem; margin-bottom: 10px; }
     .config button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #818cf8; color: #0f172a; font-weight: 700; cursor: pointer; }
@@ -190,10 +198,23 @@
   </section>
 
   <!-- ÚLTIMOS REGISTROS -->
-  <section class="card">
+  <section class="card" id="cardUltimos">
     <h2>🕒 Últimos registros <button class="mini" id="btnRefrescar" onclick="cargarUltimos(true)" aria-label="Actualizar">↻</button></h2>
     <p class="fuente" id="fuenteUltimos"></p>
-    <ul class="recientes" id="recientes"></ul>
+    <div class="grupos">
+      <div class="grupo">
+        <h3>🍼 Tomas</h3>
+        <ul class="recientes" id="ultTomas"></ul>
+      </div>
+      <div class="grupo">
+        <h3>😴 Sueño</h3>
+        <ul class="recientes" id="ultSueno"></ul>
+      </div>
+      <div class="grupo">
+        <h3>🧷 Pañales</h3>
+        <ul class="recientes" id="ultPanales"></ul>
+      </div>
+    </div>
   </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -406,7 +427,7 @@
 
   function agregarReciente(icono, texto, iso) {
     recientes.unshift({ icono: icono, texto: texto, iso: iso });
-    recientes = recientes.slice(0, 15);
+    recientes = recientes.slice(0, 40);
     guardar(LS.recientes, recientes);
     pintarRecientes();
   }
@@ -487,49 +508,74 @@
     }
   }
 
-  function textoRegistro(r) {
-    if (r.tipo === 'panal') return { icono: '🧷', texto: 'Pañal: ' + (r.detalle || '') };
-    const dur = (typeof r.duracion_min === 'number') ? ' · ' + duracion(r.duracion_min) : '';
-    if (r.tipo === 'lactancia') {
-      if (r.estado === 'En curso') return { icono: '🍼', texto: 'Lactancia en curso' };
-      if (r.estado === 'Descartada') return { icono: '↩️', texto: 'Lactancia descartada' };
-      return { icono: '🍼', texto: 'Lactancia · ' + (r.detalle || '') + (r.onzas ? ' ' + r.onzas + ' oz' : '') + dur };
+  // Una lista por concepto, con los últimos 5 de cada uno, en 3 columnas angostas.
+  // Los descartados (toques por error) no se muestran. Textos cortos para que entren en ~95 px.
+  const GRUPOS = [
+    { tipo: 'lactancia', id: 'ultTomas',   vacio: 'Sin tomas' },
+    { tipo: 'sueno',     id: 'ultSueno',   vacio: 'Sin sueños' },
+    { tipo: 'panal',     id: 'ultPanales', vacio: 'Sin pañales' }
+  ];
+  const TOMA  = { 'Pecho': ['🤱', 'Pecho'], 'Leche materna (biberón)': ['🍼', 'Leche materna'], 'Fórmula': ['🥛', 'Fórmula'] };
+  const PANAL = { 'Pipí': '💧', 'Popó': '💩', 'Ambos': '💧💩' };
+  // Respaldo local: los registros de este celular no guardan el tipo, se deduce por el ícono.
+  const TIPO_POR_ICONO = { '🧷': 'panal', '😴': 'sueno', '☀️': 'sueno', '🍼': 'lactancia' };
+
+  function filaExcel(r, hoyLima) {
+    const dia = (r.fecha && r.fecha !== hoyLima && /^\d{4}-\d{2}-\d{2}$/.test(r.fecha)) ? r.fecha.slice(8, 10) + '/' + r.fecha.slice(5, 7) + ' ' : '';
+    const dur = (typeof r.duracion_min === 'number') ? duracion(r.duracion_min) : '';
+    if (r.tipo === 'panal') {
+      return { cuando: dia + (r.hora || ''), texto: (PANAL[r.detalle] || '🧷') + ' ' + (r.detalle || '') };
     }
-    if (r.estado === 'En curso') return { icono: '😴', texto: 'Durmiendo' };
-    if (r.estado === 'Descartada') return { icono: '↩️', texto: 'Sueño descartado' };
-    return { icono: '☀️', texto: 'Sueño' + dur };
+    if (r.tipo === 'lactancia') {
+      if (r.estado === 'En curso') return { cuando: dia + (r.hora || ''), texto: '⏳ en curso' };
+      const t = TOMA[r.detalle] || ['🍼', r.detalle || 'Toma'];
+      const que = r.onzas ? r.onzas + ' oz' : t[1];
+      return { cuando: dia + (r.hora || ''), texto: t[0] + ' ' + que + (dur ? ' · ' + dur : '') };
+    }
+    if (r.estado === 'En curso') return { cuando: dia + (r.hora || ''), texto: '😴 durmiendo' };
+    return { cuando: dia + (r.hora || '') + (r.hora_fin ? '–' + r.hora_fin : ''), texto: '☀️ ' + (dur || 'durmió') };
+  }
+
+  // Los textos locales son del tipo "Terminó lactancia — Pecho · 15 min": se les quita el prefijo.
+  function textoLocal(r) {
+    const t = String(r.texto || '')
+      .replace(/^Terminó lactancia — /, '')
+      .replace(/^Comenzó lactancia$/, 'comenzó')
+      .replace(/^Se despertó — durmió /, '')
+      .replace(/^Se durmió$/, 'se durmió')
+      .replace(/^Pañal: /, '');
+    return r.icono + ' ' + t;
   }
 
   function pintarRecientes() {
-    const ul = document.getElementById('recientes');
     const fuente = document.getElementById('fuenteUltimos');
-    ul.innerHTML = '';
     const desdeExcel = Array.isArray(ultimosServidor);
     fuente.textContent = desdeExcel
       ? 'Guardado en el Excel'
       : (webhook ? 'Sin conexión con el Excel · solo lo de este celular' : 'Registrado en este celular');
-
     const hoyLima = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-    const items = desdeExcel
-      ? ultimosServidor.slice(0, 5).map(r => {
-          const t = textoRegistro(r);
-          const dia = (r.fecha && r.fecha !== hoyLima && /^\d{4}-\d{2}-\d{2}$/.test(r.fecha)) ? r.fecha.slice(8, 10) + '/' + r.fecha.slice(5, 7) + ' ' : '';
-          return { icono: t.icono, texto: t.texto, cuando: dia + (r.hora || '') };
-        })
-      : recientes.slice(0, 5).map(r => ({ icono: r.icono, texto: r.texto, cuando: hora(r.iso) }));
 
-    if (!items.length) {
-      const li = document.createElement('li');
-      li.innerHTML = '<span class="vacio">Todavía no hay registros.</span>';
-      ul.appendChild(li);
-      return;
-    }
-    for (const it of items) {
-      const li = document.createElement('li');
-      const hs = document.createElement('span'); hs.className = 'hora'; hs.textContent = it.cuando;
-      const ts = document.createElement('span'); ts.textContent = it.icono + ' ' + it.texto;
-      li.appendChild(hs); li.appendChild(ts);
-      ul.appendChild(li);
+    for (const g of GRUPOS) {
+      const items = desdeExcel
+        ? ultimosServidor.filter(r => r.tipo === g.tipo && r.estado !== 'Descartada').slice(0, 5).map(r => filaExcel(r, hoyLima))
+        : recientes.filter(r => TIPO_POR_ICONO[r.icono] === g.tipo).slice(0, 5).map(r => ({ cuando: hora(r.iso), texto: textoLocal(r) }));
+
+      const ul = document.getElementById(g.id);
+      ul.innerHTML = '';
+      if (!items.length) {
+        const li = document.createElement('li');
+        const v = document.createElement('span'); v.className = 'vacio'; v.textContent = g.vacio;
+        li.appendChild(v);
+        ul.appendChild(li);
+        continue;
+      }
+      for (const it of items) {
+        const li = document.createElement('li');
+        const hs = document.createElement('span'); hs.className = 'hora'; hs.textContent = it.cuando;
+        const ts = document.createElement('span'); ts.className = 'txt'; ts.textContent = it.texto;
+        li.appendChild(hs); li.appendChild(ts);
+        ul.appendChild(li);
+      }
     }
   }
 
