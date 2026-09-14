@@ -1,5 +1,5 @@
 {
-  "name": "gastos-por-voz",
-  "version": "1.0.0",
-  "description": "Registro de gastos por voz con n8n"
+  "name": "control-bebe",
+  "version": "2.0.0",
+  "description": "Control del bebé (lactancia, sueño y pañales) con n8n y Google Sheets"
 }

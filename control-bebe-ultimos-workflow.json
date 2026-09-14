@@ -1,0 +1,107 @@
+{
+  "name": "Control del Bebé — Últimos registros",
+  "nodes": [
+    {
+      "id": "b2b0c002-0000-4000-8000-000000000001",
+      "name": "Últimos Registros",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-520, 0],
+      "webhookId": "b2b0c002-0000-4000-8000-0000000000aa",
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "bebe-ultimos",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      }
+    },
+    {
+      "id": "b2b0c002-0000-4000-8000-000000000002",
+      "name": "Leer Lactancia",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [-300, 0],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "mode": "id", "value": "11ZtlePnaHvxkHUTkMMFiCq3GtZVr0eqxidgLncnR-fs" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "Lactancia" },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "wXZRoObFpwOKpgkY", "name": "Google Sheets account" }
+      }
+    },
+    {
+      "id": "b2b0c002-0000-4000-8000-000000000003",
+      "name": "Leer Sueño",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [-80, 0],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "mode": "id", "value": "11ZtlePnaHvxkHUTkMMFiCq3GtZVr0eqxidgLncnR-fs" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "Sueño" },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "wXZRoObFpwOKpgkY", "name": "Google Sheets account" }
+      }
+    },
+    {
+      "id": "b2b0c002-0000-4000-8000-000000000004",
+      "name": "Leer Pañales",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [140, 0],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "mode": "id", "value": "11ZtlePnaHvxkHUTkMMFiCq3GtZVr0eqxidgLncnR-fs" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "Pañales" },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "wXZRoObFpwOKpgkY", "name": "Google Sheets account" }
+      }
+    },
+    {
+      "id": "b2b0c002-0000-4000-8000-000000000005",
+      "name": "Armar Últimos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [360, 0],
+      "executeOnce": true,
+      "parameters": {
+        "jsCode": "// Junta las 3 pestañas, ordena por fecha y hora (más reciente primero) y devuelve las últimas N.\n// Tolerante al formato: Google Sheets puede devolver la fecha como 'YYYY-MM-DD',\n// como 'DD/MM/YYYY' o como número de serie, según cómo haya formateado la celda.\nconst q = ($('Últimos Registros').first().json.query) || {};\nconst N = Math.min(50, Math.max(1, parseInt(q.n, 10) || 5));\n\nfunction filas(nodo) {\n  try { return $(nodo).all().map(i => i.json).filter(r => r && r.id); } catch (e) { return []; }\n}\nfunction pad(n) { return String(n).padStart(2, '0'); }\nfunction claveFecha(f) {\n  if (f === null || f === undefined || f === '') return '';\n  if (typeof f === 'number') {\n    const d = new Date(Math.round((f - 25569) * 86400000));\n    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());\n  }\n  const s = String(f).trim();\n  let m = s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})/);\n  if (m) return m[1] + '-' + pad(m[2]) + '-' + pad(m[3]);\n  m = s.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})/);\n  if (m) return m[3] + '-' + pad(m[2]) + '-' + pad(m[1]);\n  return s;\n}\nfunction claveHora(h) {\n  if (h === null || h === undefined || h === '') return '';\n  if (typeof h === 'number') {\n    const seg = Math.round((h % 1) * 86400);\n    return pad(Math.floor(seg / 3600)) + ':' + pad(Math.floor((seg % 3600) / 60));\n  }\n  const m = String(h).trim().match(/^(\\d{1,2}):(\\d{2})/);\n  return m ? pad(m[1]) + ':' + m[2] : String(h);\n}\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return null;\n  const n = Number(String(v).replace(',', '.'));\n  return isFinite(n) ? n : null;\n}\n\nconst reg = [];\nfilas('Leer Lactancia').forEach(r => reg.push({ tipo: 'lactancia', id: r.id, fecha: claveFecha(r.fecha), hora: claveHora(r.hora_inicio), hora_fin: claveHora(r.hora_fin), duracion_min: num(r.duracion_min), detalle: r.tipo || '', onzas: num(r.onzas), estado: r.estado || '', _fila: r.row_number || 0 }));\nfilas('Leer Sueño').forEach(r => reg.push({ tipo: 'sueno', id: r.id, fecha: claveFecha(r.fecha), hora: claveHora(r.hora_inicio), hora_fin: claveHora(r.hora_fin), duracion_min: num(r.duracion_min), detalle: '', onzas: null, estado: r.estado || '', _fila: r.row_number || 0 }));\nfilas('Leer Pañales').forEach(r => reg.push({ tipo: 'panal', id: r.id, fecha: claveFecha(r.fecha), hora: claveHora(r.hora), hora_fin: '', duracion_min: null, detalle: r.contenido || '', onzas: null, estado: '', _fila: r.row_number || 0 }));\n\nreg.sort((a, b) => (b.fecha + b.hora).localeCompare(a.fecha + a.hora) || (b._fila - a._fila));\n\nfunction abierto(tipo) {\n  const r = reg.find(x => x.tipo === tipo && x.estado === 'En curso');\n  return r ? { id: r.id, fecha: r.fecha, hora: r.hora } : null;\n}\n\nreturn [{ json: {\n  ok: true,\n  total: reg.length,\n  en_curso: { lactancia: abierto('lactancia'), sueno: abierto('sueno') },\n  registros: reg.slice(0, N).map(({ _fila, ...r }) => r)\n} }];"
+      }
+    },
+    {
+      "id": "b2b0c002-0000-4000-8000-000000000006",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [580, 0],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": { "responseCode": 200 }
+      }
+    }
+  ],
+  "connections": {
+    "Últimos Registros": { "main": [[{ "node": "Leer Lactancia", "type": "main", "index": 0 }]] },
+    "Leer Lactancia": { "main": [[{ "node": "Leer Sueño", "type": "main", "index": 0 }]] },
+    "Leer Sueño": { "main": [[{ "node": "Leer Pañales", "type": "main", "index": 0 }]] },
+    "Leer Pañales": { "main": [[{ "node": "Armar Últimos", "type": "main", "index": 0 }]] },
+    "Armar Últimos": { "main": [[{ "node": "Responder", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "America/Lima" }
+}

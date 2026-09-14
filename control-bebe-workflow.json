@@ -1,0 +1,130 @@
+{
+  "name": "Control del Bebé",
+  "nodes": [
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000001",
+      "name": "Registro Bebé",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-420, 0],
+      "webhookId": "b1a0c001-0000-4000-8000-0000000000aa",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bebe",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      }
+    },
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000002",
+      "name": "Normalizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, 0],
+      "parameters": {
+        "jsCode": "// Traduce lo que manda la app a UNA fila del Excel.\n// Las horas llegan en ISO UTC desde el teléfono y se guardan en hora de Lima.\n// La fila se identifica por 'id': el Sheet usa append-or-update por esa columna,\n// así los reintentos de la app no duplican y el 'fin' completa la fila del 'inicio'.\nconst TZ = 'America/Lima';\nconst b = ($input.first().json.body) || {};\n\nfunction fecha(iso) { return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)); }\nfunction hora(iso)  { return new Intl.DateTimeFormat('es-PE', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)); }\nfunction esIso(v)   { return typeof v === 'string' && !isNaN(new Date(v).getTime()); }\nfunction invalido(msg) { return [{ json: { valido: false, error: msg } }]; }\n\nif (!b.id || typeof b.id !== 'string') return invalido('Falta id');\nconst evento = b.evento;\nconst accion = b.accion;\n\nif (evento === 'panal') {\n  if (!esIso(b.fecha_hora)) return invalido('fecha_hora inválida');\n  if (!['Pipí', 'Popó', 'Ambos'].includes(b.contenido)) return invalido('contenido inválido: ' + b.contenido);\n  return [{ json: { valido: true, _hoja: 'Pañales', id: b.id, fecha: fecha(b.fecha_hora), hora: hora(b.fecha_hora), contenido: b.contenido } }];\n}\n\nif (evento !== 'lactancia' && evento !== 'sueno') return invalido('evento desconocido: ' + evento);\nif (!['inicio', 'fin', 'cancelar'].includes(accion)) return invalido('accion desconocida: ' + accion);\nif (!esIso(b.inicio)) return invalido('inicio inválido');\n\nconst fila = {\n  valido: true,\n  _hoja: evento === 'lactancia' ? 'Lactancia' : 'Sueño',\n  id: b.id,\n  fecha: fecha(b.inicio),\n  hora_inicio: hora(b.inicio)\n};\n\nif (accion === 'inicio') fila.estado = 'En curso';\nif (accion === 'cancelar') fila.estado = 'Descartada';\nif (accion === 'fin') {\n  if (!esIso(b.fin)) return invalido('fin inválido');\n  fila.hora_fin = hora(b.fin);\n  fila.duracion_min = Math.max(0, Math.round((new Date(b.fin) - new Date(b.inicio)) / 60000));\n  fila.estado = 'Terminada';\n  if (evento === 'lactancia') {\n    if (!['Pecho', 'Leche materna (biberón)', 'Fórmula'].includes(b.tipo)) return invalido('tipo inválido: ' + b.tipo);\n    fila.tipo = b.tipo;\n    if (b.tipo === 'Pecho') {\n      fila.onzas = '';\n    } else {\n      const oz = Number(b.onzas);\n      if (!(oz > 0 && oz <= 15)) return invalido('onzas inválidas: ' + b.onzas);\n      fila.onzas = oz;\n    }\n  }\n}\n\nreturn [{ json: fila }];"
+      }
+    },
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000003",
+      "name": "¿Válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [20, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "valido-1",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000004",
+      "name": "Guardar en Excel",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [260, -100],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "__rl": true, "mode": "id", "value": "11ZtlePnaHvxkHUTkMMFiCq3GtZVr0eqxidgLncnR-fs" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "={{ $json._hoja }}" },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["id"],
+          "schema": []
+        },
+        "options": { "handlingExtraData": "ignoreIt" }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "wXZRoObFpwOKpgkY", "name": "Google Sheets account" }
+      }
+    },
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000005",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [500, -180],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, hoja: $('Normalizar').item.json._hoja, id: $('Normalizar').item.json.id }) }}",
+        "options": { "responseCode": 200 }
+      }
+    },
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000006",
+      "name": "Responder Error Excel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [500, 0],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, retry: true, error: 'No se pudo guardar en el Excel' }) }}",
+        "options": { "responseCode": 500 }
+      }
+    },
+    {
+      "id": "b1a0c001-0000-4000-8000-000000000007",
+      "name": "Responder Inválido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [260, 160],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: $json.error }) }}",
+        "options": { "responseCode": 400 }
+      }
+    }
+  ],
+  "connections": {
+    "Registro Bebé": { "main": [[{ "node": "Normalizar", "type": "main", "index": 0 }]] },
+    "Normalizar": { "main": [[{ "node": "¿Válido?", "type": "main", "index": 0 }]] },
+    "¿Válido?": {
+      "main": [
+        [{ "node": "Guardar en Excel", "type": "main", "index": 0 }],
+        [{ "node": "Responder Inválido", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guardar en Excel": {
+      "main": [
+        [{ "node": "Responder OK", "type": "main", "index": 0 }],
+        [{ "node": "Responder Error Excel", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "America/Lima" }
+}
