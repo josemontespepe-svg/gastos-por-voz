@@ -60,6 +60,16 @@
     .estado b { color: #34d399; }
     .link { background: none; border: none; color: #94a3b8; font-size: 0.82rem; text-decoration: underline; cursor: pointer; margin-top: 10px; }
 
+    .proxima-hora { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.5px; margin: -6px 0 4px; font-variant-numeric: tabular-nums; }
+    #cardProxima .estado { margin-bottom: 0; }
+    #cardProxima.aviso60 { box-shadow: inset 0 0 0 2px #fbbf24, 0 8px 32px rgba(0,0,0,0.3); }
+    #cardProxima.aviso30 { box-shadow: inset 0 0 0 2px #fb923c, 0 8px 32px rgba(0,0,0,0.3); background: #2a2320; }
+    #cardProxima.tarde   { box-shadow: inset 0 0 0 2px #f87171, 0 8px 32px rgba(0,0,0,0.3); background: #2b1f24; }
+    #cardProxima.aviso60 .tag { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    #cardProxima.aviso30 .tag { background: rgba(251,146,60,0.18); color: #fb923c; }
+    #cardProxima.tarde .tag   { background: rgba(248,113,113,0.18); color: #f87171; }
+    .config label { display: block; font-size: 0.82rem; color: #94a3b8; margin: 2px 0 6px; }
+
     .panel { margin-top: 4px; }
     .label { font-size: 0.82rem; color: #94a3b8; margin-bottom: 8px; }
     .chips { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
@@ -114,8 +124,11 @@
   </header>
 
   <section class="card config" id="configPanel" hidden>
-    <h2>⚙️ URL del webhook de n8n</h2>
+    <h2>⚙️ Configuración</h2>
+    <label for="webhookInput">URL del webhook de n8n</label>
     <input type="url" id="webhookInput" placeholder="https://tu-n8n.app.n8n.cloud/webhook/bebe" />
+    <label for="intervaloInput">Horas entre tomas (contadas desde que terminó la anterior)</label>
+    <input type="number" id="intervaloInput" inputmode="decimal" step="0.5" min="1" max="8" value="3" />
     <button onclick="guardarConfig()">Guardar</button>
   </section>
 
@@ -123,6 +136,13 @@
     <span id="pendientesTxt"></span>
     <button onclick="vaciarPendientes(true)">Reintentar</button>
   </div>
+
+  <!-- PRÓXIMA TOMA -->
+  <section class="card" id="cardProxima">
+    <h2>⏰ Próxima toma <span class="tag" id="tagProxima">—</span></h2>
+    <p class="proxima-hora" id="proximaHora">—</p>
+    <p class="estado" id="proximaDetalle">Registra una toma para calcular la próxima.</p>
+  </section>
 
   <!-- LACTANCIA -->
   <section class="card" id="cardLactancia">
@@ -182,7 +202,8 @@
   // Cada evento lleva un id generado en el teléfono. n8n guarda con "append or update"
   // por ese id, así que reenviar lo mismo nunca duplica filas: la cola de pendientes
   // puede reintentar sin miedo.
-  const LS = { webhook: 'bebe_webhook', abiertos: 'bebe_abiertos', pendientes: 'bebe_pendientes', recientes: 'bebe_recientes' };
+  const LS = { webhook: 'bebe_webhook', abiertos: 'bebe_abiertos', pendientes: 'bebe_pendientes', recientes: 'bebe_recientes',
+              intervalo: 'bebe_intervalo_min', ultimaToma: 'bebe_ultima_toma', avisos: 'bebe_avisos' };
   const TZ = 'America/Lima';
 
   function leer(clave, porDefecto) {
@@ -198,6 +219,8 @@
   let recientes  = leer(LS.recientes, []);
   let finLactancia = null;                   // hora en que se tocó "Terminó", antes de elegir el tipo
   let tipoElegido  = null;
+  let intervaloMin = leer(LS.intervalo, 180);  // 3 h por defecto; editable en ⚙️
+  let tomaServidor = null;                     // última lactancia según el Excel: { estado, inicio, fin }
 
   function nuevoId() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -211,7 +234,8 @@
   }
   function duracion(min) {
     if (min < 60) return min + ' min';
-    return Math.floor(min / 60) + ' h ' + (min % 60) + ' min';
+    const hh = Math.floor(min / 60), mm = min % 60;
+    return mm ? hh + ' h ' + mm + ' min' : hh + ' h';
   }
 
   // ───────── Envío con cola de pendientes ─────────
@@ -320,6 +344,7 @@
     }
     const fin = finLactancia || new Date().toISOString();
     encolar({ evento: 'lactancia', accion: 'fin', id: a.id, inicio: a.inicio, fin: fin, tipo: tipoElegido, onzas: onzas });
+    guardar(LS.ultimaToma, fin);
 
     const detalle = tipoElegido + (onzas ? ' · ' + onzas + ' oz' : '') + ' · ' + duracion(minutosEntre(a.inicio, fin));
     agregarReciente('🍼', 'Terminó lactancia — ' + detalle, fin);
@@ -419,6 +444,7 @@
     bS.className = 'big ' + (s ? 'fin' : 'sueno');
     document.getElementById('descartarSueno').hidden = !s;
 
+    pintarProxima();
     pintarPendientes();
     pintarRecientes();
   }
@@ -430,7 +456,7 @@
   let cargandoUltimos = false;
 
   function urlUltimos() {
-    return webhook ? webhook.replace(/\/+$/, '') + '-ultimos?n=5' : '';
+    return webhook ? webhook.replace(/\/+$/, '') + '-ultimos?n=50' : '';
   }
 
   async function cargarUltimos(manual) {
@@ -447,6 +473,7 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       ultimosServidor = Array.isArray(data.registros) ? data.registros : [];
+      tomaServidor = extraerToma(ultimosServidor);
       if (manual) aviso('✅ Actualizado desde el Excel');
     } catch (e) {
       ultimosServidor = null;
@@ -456,6 +483,7 @@
       cargandoUltimos = false;
       btn.disabled = false;
       pintarRecientes();
+      pintarProxima();
     }
   }
 
@@ -483,7 +511,7 @@
 
     const hoyLima = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     const items = desdeExcel
-      ? ultimosServidor.map(r => {
+      ? ultimosServidor.slice(0, 5).map(r => {
           const t = textoRegistro(r);
           const dia = (r.fecha && r.fecha !== hoyLima && /^\d{4}-\d{2}-\d{2}$/.test(r.fecha)) ? r.fecha.slice(8, 10) + '/' + r.fecha.slice(5, 7) + ' ' : '';
           return { icono: t.icono, texto: t.texto, cuando: dia + (r.hora || '') };
@@ -505,31 +533,125 @@
     }
   }
 
+  // ───────── Próxima toma ─────────
+  // Última lactancia del Excel (la lista viene de la más reciente a la más antigua).
+  // Las horas del Excel están en hora de Lima: UTC-5 todo el año, Perú no usa horario de verano.
+  function extraerToma(registros) {
+    const r = (registros || []).find(x => x.tipo === 'lactancia' && x.estado !== 'Descartada');
+    if (!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.fecha || '') || !/^\d{2}:\d{2}$/.test(r.hora || '')) return null;
+    const inicio = new Date(r.fecha + 'T' + r.hora + ':00-05:00');
+    let fin = null;
+    if (r.estado === 'Terminada' && /^\d{2}:\d{2}$/.test(r.hora_fin || '')) {
+      fin = new Date(r.fecha + 'T' + r.hora_fin + ':00-05:00');
+      if (fin < inicio) fin = new Date(fin.getTime() + 86400000);  // terminó pasada la medianoche
+    }
+    return { estado: r.estado, inicio: inicio, fin: fin };
+  }
+
+  function pintarProxima() {
+    const card = document.getElementById('cardProxima');
+    const tag = document.getElementById('tagProxima');
+    const horaEl = document.getElementById('proximaHora');
+    const det = document.getElementById('proximaDetalle');
+    card.classList.remove('aviso60', 'aviso30', 'tarde');
+
+    // ¿Está tomando ahora? En este celular, o según el Excel si empezó después de la última que terminó aquí.
+    const finLocalIso = leer(LS.ultimaToma, null);
+    const finLocal = finLocalIso ? new Date(finLocalIso) : null;
+    const s = tomaServidor;
+    if (abiertos.lactancia || (s && s.estado === 'En curso' && (!finLocal || s.inicio > finLocal))) {
+      const desde = abiertos.lactancia ? abiertos.lactancia.inicio : s.inicio.toISOString();
+      tag.textContent = 'En curso';
+      horaEl.textContent = 'Tomando ahora';
+      det.textContent = 'Empezó a las ' + hora(desde) + '. La próxima se calcula al terminar.';
+      return;
+    }
+
+    // Base: la toma que terminó más recientemente, sea de este celular o del Excel.
+    let fin = finLocal;
+    if (s && s.fin && (!fin || s.fin > fin)) fin = s.fin;
+    if (!fin || isNaN(fin.getTime())) {
+      tag.textContent = '—';
+      horaEl.textContent = '—';
+      det.textContent = 'Registra una toma para calcular la próxima.';
+      return;
+    }
+
+    const proxima = new Date(fin.getTime() + intervaloMin * 60000);
+    const faltan = Math.round((proxima.getTime() - Date.now()) / 60000);
+    horaEl.textContent = hora(proxima.toISOString());
+    const base = duracion(intervaloMin) + ' desde que terminó a las ' + hora(fin.toISOString());
+
+    if (faltan <= 0) {
+      card.classList.add('tarde');
+      tag.textContent = faltan === 0 ? 'Le toca ya' : 'Hace ' + duracion(-faltan);
+      det.textContent = 'Ya le toca · ' + base;
+    } else if (faltan <= 30) {
+      card.classList.add('aviso30');
+      tag.textContent = '🔔 En ' + duracion(faltan);
+      det.textContent = 'Faltan menos de 30 min · ' + base;
+    } else if (faltan <= 60) {
+      card.classList.add('aviso60');
+      tag.textContent = '⚠️ En ' + duracion(faltan);
+      det.textContent = 'Falta menos de 1 hora · ' + base;
+    } else {
+      tag.textContent = 'En ' + duracion(faltan);
+      det.textContent = base;
+    }
+    revisarAvisos(faltan, fin.toISOString() + '|' + intervaloMin);
+  }
+
+  // Avisos DENTRO de la app (solo si está abierta): 1 h antes, 30 min antes y a la hora.
+  // Se recuerda cuáles ya salieron para esa toma, así no se repiten en cada refresco.
+  function revisarAvisos(faltan, clave) {
+    const av = leer(LS.avisos, {});
+    if (av.clave !== clave) { av.clave = clave; av.hechos = []; }
+    const umbrales = [
+      { min: 0,  txt: '🍼 Ya le toca la toma' },
+      { min: 30, txt: '🔔 Faltan 30 min para la próxima toma' },
+      { min: 60, txt: '⚠️ Falta 1 hora para la próxima toma' }
+    ];
+    const toca = umbrales.find(u => faltan <= u.min && !av.hechos.includes(u.min));
+    if (!toca) return;
+    umbrales.forEach(u => { if (u.min >= toca.min && !av.hechos.includes(u.min)) av.hechos.push(u.min); });
+    guardar(LS.avisos, av);
+    aviso(toca.txt, 8000);
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  }
+
   let toastTimer = null;
-  function aviso(txt) {
+  function aviso(txt, ms) {
     const t = document.getElementById('toast');
     t.textContent = txt;
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+    toastTimer = setTimeout(() => t.classList.remove('show'), ms || 3200);
   }
 
   // ───────── Configuración ─────────
   function toggleConfig() {
     const p = document.getElementById('configPanel');
     p.hidden = !p.hidden;
-    if (!p.hidden) document.getElementById('webhookInput').value = webhook;
+    if (!p.hidden) {
+      document.getElementById('webhookInput').value = webhook;
+      document.getElementById('intervaloInput').value = intervaloMin / 60;
+    }
   }
   function guardarConfig() {
     const url = document.getElementById('webhookInput').value.trim();
     if (url && !/^https?:\/\//i.test(url)) { aviso('La URL debe empezar con https://'); return; }
+    const horas = parseFloat(String(document.getElementById('intervaloInput').value).replace(',', '.'));
+    if (!(horas >= 1 && horas <= 8)) { aviso('Las horas entre tomas deben estar entre 1 y 8'); return; }
     webhook = url;
     guardar(LS.webhook, webhook);
+    intervaloMin = Math.round(horas * 60);
+    guardar(LS.intervalo, intervaloMin);
     document.getElementById('configPanel').hidden = true;
-    aviso(url ? '✅ Webhook guardado' : 'Webhook borrado');
+    aviso('✅ Configuración guardada');
     ultimosServidor = null;
     vaciarPendientes(false);
     cargarUltimos(false);
+    pintarProxima();
   }
 
   // ───────── Arranque ─────────
