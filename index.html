@@ -113,6 +113,48 @@
     .config input { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 0.9rem; margin-bottom: 10px; }
     .config button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #818cf8; color: #0f172a; font-weight: 700; cursor: pointer; }
 
+    /* ── pestañas ── */
+    .tabs { width: 100%; max-width: 420px; display: flex; gap: 4px; background: #1e293b; padding: 4px; border-radius: 14px; margin-bottom: 14px; }
+    .tab { flex: 1; border: none; background: transparent; color: #94a3b8; font-weight: 700; font-size: 0.92rem; padding: 10px; border-radius: 10px; cursor: pointer; }
+    .tab[aria-selected="true"] { background: #0f172a; color: #f1f5f9; }
+    .vista { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; }
+
+    /* ── gráficos ── */
+    .filtros { width: 100%; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .periodo { border: 1px solid #334155; background: transparent; color: #cbd5e1; border-radius: 99px; padding: 7px 12px; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .periodo.on { background: #f1f5f9; color: #0f172a; border-color: #f1f5f9; }
+    #fuenteGraf { width: 100%; margin: 0 0 12px; }
+    #graficos { width: 100%; display: flex; flex-direction: column; align-items: center; transition: opacity .2s; }
+    #graficos.cargando { opacity: 0.5; }
+    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; }
+    .kpi .k-label { font-size: 0.78rem; color: #94a3b8; }
+    .kpi .k-valor { font-size: 1.75rem; font-weight: 700; color: #f1f5f9; line-height: 1.15; margin-top: 2px; }
+    .kpi .k-unidad { font-size: 0.82rem; font-weight: 600; color: #94a3b8; margin-left: 4px; }
+    .kpi .k-hoy { font-size: 0.78rem; color: #cbd5e1; margin-top: 2px; }
+    .k-pie { grid-column: 1 / -1; font-size: 0.74rem; color: #64748b; }
+    .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: -6px 0 10px; font-size: 0.78rem; color: #cbd5e1; }
+    .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+    .leyenda i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .leyenda i.punto { border-radius: 50%; }
+    .leyenda i.banda { width: 18px; opacity: 0.45; }
+    .grafico { position: relative; width: 100%; }
+    .grafico svg { display: block; overflow: visible; }
+    .vacio-graf { font-size: 0.84rem; color: #64748b; padding: 16px 0; text-align: center; line-height: 1.4; }
+    .hit { cursor: pointer; outline: none; }
+    .col-g.hover .seg { filter: brightness(1.2); }
+    .franja.hover { fill-opacity: 0.65; }
+    .punto.hover { stroke: #f1f5f9; }
+    .tip { position: absolute; pointer-events: none; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 8px 10px; font-size: 0.78rem; color: #cbd5e1; white-space: nowrap; z-index: 5; box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
+    .tip .t-tit { color: #94a3b8; margin-bottom: 4px; }
+    .tip .t-fila { display: flex; align-items: center; gap: 6px; line-height: 1.5; }
+    .tip .t-fila b { color: #f1f5f9; font-weight: 700; }
+    .tip .t-key { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
+    .tabla summary { font-size: 0.8rem; color: #94a3b8; cursor: pointer; margin-top: 8px; }
+    .tabla table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    .tabla th, .tabla td { text-align: right; padding: 4px 6px; border-bottom: 1px solid #334155; color: #cbd5e1; }
+    .tabla th:first-child, .tabla td:first-child { text-align: left; }
+    .tabla th { color: #94a3b8; font-weight: 600; }
+
     .toast {
       position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(140px);
       background: #f1f5f9; color: #0f172a; padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 0.92rem;
@@ -144,6 +186,13 @@
     <span id="pendientesTxt"></span>
     <button onclick="vaciarPendientes(true)">Reintentar</button>
   </div>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" id="tabRegistro" aria-selected="true" onclick="mostrarVista('registro')">📝 Registro</button>
+    <button class="tab" role="tab" id="tabGraficos" aria-selected="false" onclick="mostrarVista('graficos')">📊 Gráficos</button>
+  </nav>
+
+  <div class="vista" id="vistaRegistro">
 
   <!-- PRÓXIMA TOMA -->
   <section class="card" id="cardProxima">
@@ -217,6 +266,60 @@
     </div>
   </section>
 
+  </div>
+
+  <!-- ══════════ PESTAÑA GRÁFICOS ══════════ -->
+  <div class="vista" id="vistaGraficos" hidden>
+    <div class="filtros" role="group" aria-label="Período">
+      <button class="periodo" data-dias="7" onclick="elegirPeriodo(7)">7 días</button>
+      <button class="periodo" data-dias="14" onclick="elegirPeriodo(14)">14 días</button>
+      <button class="periodo" data-dias="30" onclick="elegirPeriodo(30)">30 días</button>
+      <button class="mini" id="btnRefrescarGraf" onclick="cargarHistoria(true)" aria-label="Actualizar gráficos">↻</button>
+    </div>
+    <p class="fuente" id="fuenteGraf"></p>
+
+    <div id="graficos">
+      <section class="card">
+        <h2>📌 Resumen</h2>
+        <div class="kpis" id="kpis"></div>
+      </section>
+
+      <section class="card">
+        <h2>🍼 Tomas por día</h2>
+        <div class="leyenda" id="legTomas"></div>
+        <div class="grafico" id="chTomas"></div>
+        <details class="tabla"><summary>Ver tabla</summary><div id="tbTomas"></div></details>
+      </section>
+
+      <section class="card">
+        <h2>🥛 Onzas por día</h2>
+        <div class="leyenda" id="legOnzas"></div>
+        <div class="grafico" id="chOnzas"></div>
+        <details class="tabla"><summary>Ver tabla</summary><div id="tbOnzas"></div></details>
+      </section>
+
+      <section class="card">
+        <h2>🧷 Pañales por día</h2>
+        <div class="leyenda" id="legPanales"></div>
+        <div class="grafico" id="chPanales"></div>
+        <details class="tabla"><summary>Ver tabla</summary><div id="tbPanales"></div></details>
+      </section>
+
+      <section class="card">
+        <h2>😴 Horas de sueño por día</h2>
+        <div class="grafico" id="chSueno"></div>
+        <details class="tabla"><summary>Ver tabla</summary><div id="tbSueno"></div></details>
+      </section>
+
+      <section class="card">
+        <h2>🕘 Patrón de 24 horas</h2>
+        <div class="leyenda" id="legPatron"></div>
+        <div class="grafico" id="chPatron"></div>
+        <details class="tabla"><summary>Ver tabla</summary><div id="tbPatron"></div></details>
+      </section>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -224,7 +327,8 @@
   // por ese id, así que reenviar lo mismo nunca duplica filas: la cola de pendientes
   // puede reintentar sin miedo.
   const LS = { webhook: 'bebe_webhook', abiertos: 'bebe_abiertos', pendientes: 'bebe_pendientes', recientes: 'bebe_recientes',
-              intervalo: 'bebe_intervalo_min', ultimaToma: 'bebe_ultima_toma', avisos: 'bebe_avisos' };
+              intervalo: 'bebe_intervalo_min', ultimaToma: 'bebe_ultima_toma', avisos: 'bebe_avisos',
+              historia: 'bebe_historia', periodo: 'bebe_periodo', vista: 'bebe_vista' };
   const TZ = 'America/Lima';
 
   function leer(clave, porDefecto) {
@@ -665,6 +769,376 @@
     if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
   }
 
+  // ───────── Gráficos ─────────
+  // Colores validados con el script de la guía de visualización contra el fondo real de las tarjetas (#1e293b):
+  // azul / naranja / turquesa pasan daltonismo, visión normal y contraste, incluso todos contra todos.
+  // El violeta del sueño NO se distingue del azul (ΔE 1,9 protan): por eso en el patrón de 24 h el sueño va
+  // como franja translúcida detrás de los puntos (otra forma), y en su propio gráfico va solo.
+  const COL = { pecho: '#3987e5', materna: '#d95926', formula: '#199e70', pipi: '#3987e5', popo: '#d95926', ambos: '#199e70',
+                sueno: '#9085e9', superficie: '#1e293b', grilla: '#334155', base: '#475569', tenue: '#94a3b8', tinta: '#f1f5f9' };
+  const TIPOS_TOMA = [
+    { key: 'pecho',   label: 'Pecho',         detalle: 'Pecho',                   color: COL.pecho },
+    { key: 'materna', label: 'Leche materna', detalle: 'Leche materna (biberón)', color: COL.materna },
+    { key: 'formula', label: 'Fórmula',       detalle: 'Fórmula',                 color: COL.formula }
+  ];
+  const TIPOS_PANAL = [
+    { key: 'pipi',  label: 'Pipí',  detalle: 'Pipí',  color: COL.pipi },
+    { key: 'popo',  label: 'Popó',  detalle: 'Popó',  color: COL.popo },
+    { key: 'ambos', label: 'Ambos', detalle: 'Ambos', color: COL.ambos }
+  ];
+  const SNS = 'http://www.w3.org/2000/svg';
+  const DIA_SEM = ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sá'];
+  let historia = leer(LS.historia, null);          // { registros, total, cargado } — lo último leído del Excel
+  let periodo = [7, 14, 30].indexOf(leer(LS.periodo, 7)) >= 0 ? leer(LS.periodo, 7) : 7;
+  let cargandoHistoria = false;
+
+  function urlHistoria() { return webhook ? webhook.replace(/\/+$/, '') + '-ultimos?n=2000' : ''; }
+  function fechaHoy() { return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+  function sumarDias(fecha, n) { const p = fecha.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2] + n, 12)).toISOString().slice(0, 10); }
+  function diaSem(fecha) { const p = fecha.split('-').map(Number); return DIA_SEM[new Date(Date.UTC(p[0], p[1] - 1, p[2], 12)).getUTCDay()]; }
+  function etiquetaDia(fecha, hoy) { return fecha === hoy ? 'hoy' : diaSem(fecha) + ' ' + Number(fecha.slice(8, 10)); }
+  function fechaCorta(fecha) { return diaSem(fecha) + ' ' + fecha.slice(8, 10) + '/' + fecha.slice(5, 7); }
+  function aMin(t) { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
+  function hhmm(min) { const x = Math.round(min); return String(Math.floor(x / 60) % 24).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); }
+  function num1(n) { return String(Math.round(n * 10) / 10); }
+
+  function mostrarVista(v) {
+    const g = v === 'graficos';
+    document.getElementById('vistaRegistro').hidden = g;
+    document.getElementById('vistaGraficos').hidden = !g;
+    document.getElementById('tabRegistro').setAttribute('aria-selected', String(!g));
+    document.getElementById('tabGraficos').setAttribute('aria-selected', String(g));
+    guardar(LS.vista, g ? 'graficos' : 'registro');
+    window.scrollTo(0, 0);
+    if (g) { pintarGraficos(); cargarHistoria(false); }
+  }
+
+  function elegirPeriodo(d) { periodo = d; guardar(LS.periodo, d); pintarGraficos(); }
+
+  async function cargarHistoria(manual) {
+    const url = urlHistoria();
+    if (!url) { pintarGraficos(); if (manual) aviso('Primero configura la URL del webhook (⚙️)'); return; }
+    if (cargandoHistoria) return;
+    cargandoHistoria = true;
+    const cont = document.getElementById('graficos');
+    cont.classList.add('cargando');                  // se mantiene el gráfico anterior, atenuado
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      historia = { registros: Array.isArray(data.registros) ? data.registros : [], total: Number(data.total) || 0, cargado: new Date().toISOString() };
+      guardar(LS.historia, historia);
+      if (manual) aviso('✅ Gráficos actualizados');
+    } catch (e) {
+      if (manual) aviso('No se pudo leer el Excel, muestro lo último guardado');
+    } finally {
+      clearTimeout(t);
+      cargandoHistoria = false;
+      cont.classList.remove('cargando');
+      pintarGraficos();
+    }
+  }
+
+  // Suma por día. El sueño puede cruzar la medianoche: se reparte entre los días que toca.
+  function agregar(registros, dias) {
+    const porDia = {};
+    dias.forEach(d => { porDia[d] = { tomas: { pecho: 0, materna: 0, formula: 0 }, onzas: { materna: 0, formula: 0 },
+                                      panales: { pipi: 0, popo: 0, ambos: 0 }, suenoMin: 0, eventos: [], suenos: [], activo: false }; });
+    for (const r of registros) {
+      if (!r || r.estado === 'Descartada' || !/^\d{4}-\d{2}-\d{2}$/.test(r.fecha || '')) continue;
+      const ini = aMin(r.hora);
+      if (ini === null) continue;
+      if (r.tipo === 'sueno') {
+        if (r.estado !== 'Terminada' || typeof r.duracion_min !== 'number' || r.duracion_min <= 0) continue;
+        let fecha = r.fecha, desde = ini, resto = Math.min(r.duracion_min, 2880);
+        while (resto > 0) {
+          const hasta = Math.min(1440, desde + resto);
+          const dd = porDia[fecha];
+          if (dd) { dd.suenoMin += hasta - desde; dd.suenos.push({ desde: desde, hasta: hasta }); dd.activo = true; }
+          resto -= hasta - desde;
+          desde = 0;
+          fecha = sumarDias(fecha, 1);
+        }
+        continue;
+      }
+      const dd = porDia[r.fecha];
+      if (!dd) continue;
+      dd.activo = true;
+      if (r.tipo === 'lactancia') {
+        if (r.estado !== 'Terminada') continue;
+        const t = TIPOS_TOMA.find(x => x.detalle === r.detalle);
+        if (!t) continue;
+        dd.tomas[t.key]++;
+        if (t.key !== 'pecho' && typeof r.onzas === 'number') dd.onzas[t.key] += r.onzas;
+        dd.eventos.push({ min: ini, tipo: t, onzas: r.onzas });
+      } else if (r.tipo === 'panal') {
+        const t = TIPOS_PANAL.find(x => x.detalle === r.detalle);
+        if (t) dd.panales[t.key]++;
+      }
+    }
+    return porDia;
+  }
+
+  // Indicadores: promedio de los días COMPLETOS con registros (hoy no cuenta porque va a medias).
+  function pintarKpis(porDia, dias, hoy) {
+    const cont = document.getElementById('kpis');
+    cont.textContent = '';
+    const completos = dias.filter(d => d !== hoy && porDia[d].activo);
+    const fTomas = x => x.tomas.pecho + x.tomas.materna + x.tomas.formula;
+    const fOnzas = x => x.onzas.materna + x.onzas.formula;
+    const fPanales = x => x.panales.pipi + x.panales.popo + x.panales.ambos;
+    const prom = f => completos.length ? completos.reduce((a, d) => a + f(porDia[d]), 0) / completos.length : null;
+    const conSueno = completos.filter(d => porDia[d].suenoMin > 0);
+    const promSueno = conSueno.length >= 2 ? conSueno.reduce((a, d) => a + porDia[d].suenoMin, 0) / conSueno.length / 60 : null;
+    const hd = porDia[hoy];
+    const tiles = [
+      { label: 'Tomas por día', valor: prom(fTomas), unidad: '', hoy: 'Hoy: ' + fTomas(hd) },
+      { label: 'Onzas por día', valor: prom(fOnzas), unidad: 'oz', hoy: 'Hoy: ' + num1(fOnzas(hd)) + ' oz' },
+      { label: 'Pañales por día', valor: prom(fPanales), unidad: '', hoy: 'Hoy: ' + fPanales(hd) },
+      { label: 'Sueño por día', valor: promSueno, unidad: 'h', hoy: promSueno === null ? 'Pocos datos de sueño' : 'Hoy: ' + (hd.suenoMin ? duracion(Math.round(hd.suenoMin)) : '—') }
+    ];
+    for (const t of tiles) {
+      const k = document.createElement('div'); k.className = 'kpi';
+      const l = document.createElement('div'); l.className = 'k-label'; l.textContent = t.label;
+      const v = document.createElement('div'); v.className = 'k-valor'; v.textContent = t.valor === null ? '—' : num1(t.valor);
+      if (t.valor !== null && t.unidad) { const u = document.createElement('span'); u.className = 'k-unidad'; u.textContent = t.unidad; v.appendChild(u); }
+      const s = document.createElement('div'); s.className = 'k-hoy'; s.textContent = t.hoy;
+      k.appendChild(l); k.appendChild(v); k.appendChild(s);
+      cont.appendChild(k);
+    }
+    const pie = document.createElement('p'); pie.className = 'k-pie';
+    pie.textContent = completos.length
+      ? 'Promedio de ' + completos.length + (completos.length === 1 ? ' día' : ' días') + ' con registros, sin contar hoy.'
+      : 'Todavía no hay días completos en este período.';
+    cont.appendChild(pie);
+  }
+
+  function nsEl(tag, attrs, padre) {
+    const e = document.createElementNS(SNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (padre) padre.appendChild(e);
+    return e;
+  }
+  function pasoLindo(x) { const e = Math.pow(10, Math.floor(Math.log10(x))); const f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e; }
+  function escalaY(max, entero) {
+    let paso = pasoLindo(max / 4);
+    if (entero) paso = Math.max(1, Math.ceil(paso));
+    const tope = Math.max(paso, Math.ceil(max / paso - 1e-9) * paso);
+    const ticks = [];
+    for (let v = 0; v <= tope + 1e-9; v += paso) ticks.push(Math.round(v * 100) / 100);
+    return { tope: tope, ticks: ticks };
+  }
+  // Barra con el extremo de datos redondeado (4 px) y cuadrada en la línea base.
+  function pathBarra(x, arriba, abajo, w, radio) {
+    const r = Math.max(0, Math.min(radio, abajo - arriba, w / 2));
+    return 'M' + x + ',' + abajo + 'L' + x + ',' + (arriba + r) + 'Q' + x + ',' + arriba + ' ' + (x + r) + ',' + arriba +
+           'L' + (x + w - r) + ',' + arriba + 'Q' + (x + w) + ',' + arriba + ' ' + (x + w) + ',' + (arriba + r) + 'L' + (x + w) + ',' + abajo + 'Z';
+  }
+  function vacioGraf(cont, texto) { cont.textContent = ''; const p = document.createElement('p'); p.className = 'vacio-graf'; p.textContent = texto; cont.appendChild(p); }
+
+  // Tooltip: el valor manda, la etiqueta acompaña. Todo con textContent.
+  function mostrarTip(cont, x, y, titulo, filas) {
+    let tip = cont.querySelector('.tip');
+    if (!tip) { tip = document.createElement('div'); tip.className = 'tip'; cont.appendChild(tip); }
+    tip.textContent = '';
+    const tt = document.createElement('div'); tt.className = 't-tit'; tt.textContent = titulo; tip.appendChild(tt);
+    filas.forEach(f => {
+      const row = document.createElement('div'); row.className = 't-fila';
+      if (f.color) { const k = document.createElement('i'); k.className = 't-key'; k.style.background = f.color; row.appendChild(k); }
+      if (f.valor) { const b = document.createElement('b'); b.textContent = f.valor; row.appendChild(b); }
+      const s = document.createElement('span'); s.textContent = f.label; row.appendChild(s);
+      tip.appendChild(row);
+    });
+    tip.hidden = false;
+    const cw = cont.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+    const left = Math.max(0, Math.min(x - tw / 2, cw - tw));
+    let top = y - th - 10;
+    if (top < 0) top = y + 14;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function conectarTip(hit, cont, pos, titulo, filas, resaltar) {
+    const mostrar = () => {
+      document.querySelectorAll('.hover').forEach(z => z.classList.remove('hover'));
+      if (resaltar) resaltar.classList.add('hover');
+      const p = pos();
+      mostrarTip(cont, p.x, p.y, titulo, filas);
+    };
+    const ocultar = () => { if (resaltar) resaltar.classList.remove('hover'); const t = cont.querySelector('.tip'); if (t) t.hidden = true; };
+    hit.addEventListener('pointerenter', mostrar);
+    hit.addEventListener('click', mostrar);
+    hit.addEventListener('focus', mostrar);
+    hit.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') ocultar(); });
+    hit.addEventListener('blur', ocultar);
+  }
+
+  // Columnas (apiladas si hay más de una serie). Etiqueta directa solo en la columna de hoy.
+  function graficoColumnas(cont, o) {
+    const tot = o.dias.map(d => o.series.reduce((a, s) => a + o.valor(d, s.key), 0));
+    const max = Math.max(0, ...tot);
+    if (!(max > 0)) { vacioGraf(cont, o.vacio); return; }
+    cont.textContent = '';
+    const W = Math.max(260, Math.round(cont.getBoundingClientRect().width) || 340);
+    const ARR = 18, PLOT = 150, EJE = 22, IZQ = 30, DER = 4, H = ARR + PLOT + EJE;
+    const esc = escalaY(max, o.entero);
+    const fmt = v => (o.entero ? String(Math.round(v)) : num1(v)) + (o.unidad ? ' ' + o.unidad : '');
+    const svg = nsEl('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': o.titulo + '. El detalle está en la tabla.' }, cont);
+    const y = v => ARR + PLOT - (v / esc.tope) * PLOT;
+    esc.ticks.forEach(t => {
+      const yy = Math.round(y(t)) + 0.5;
+      nsEl('line', { x1: IZQ, x2: W - DER, y1: yy, y2: yy, stroke: t === 0 ? COL.base : COL.grilla, 'stroke-width': 1 }, svg);
+      nsEl('text', { x: IZQ - 6, y: yy + 3.5, 'text-anchor': 'end', 'font-size': 10, fill: COL.tenue }, svg).textContent = o.entero ? String(t) : num1(t);
+    });
+    const n = o.dias.length, plotW = W - IZQ - DER, banda = plotW / n;
+    const w = Math.max(3, Math.min(24, Math.round(banda * 0.62)));
+    const cada = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(plotW / 34))));
+    o.dias.forEach((d, i) => {
+      const x0 = IZQ + banda * i, cx = x0 + banda / 2, bx = Math.round(cx - w / 2);
+      const g = nsEl('g', { class: 'col-g' }, svg);
+      const segs = o.series.map(s => ({ s: s, v: o.valor(d, s.key) })).filter(z => z.v > 0);
+      let acum = 0;
+      segs.forEach((z, k) => {
+        const abajo = y(acum) - (k > 0 ? 2 : 0);          // 2 px de separación entre segmentos
+        acum += z.v;
+        const arriba = Math.min(y(acum), abajo - 1);
+        nsEl('path', { d: pathBarra(bx, arriba, abajo, w, k === segs.length - 1 ? 4 : 0), fill: z.s.color, class: 'seg' }, g);
+      });
+      if (i === n - 1 && tot[i] > 0) {
+        nsEl('text', { x: cx, y: y(tot[i]) - 5, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: COL.tinta }, svg).textContent = fmt(tot[i]);
+      }
+      if ((n - 1 - i) % cada === 0) {                     // etiquetas del eje contadas desde hoy: nunca chocan
+        nsEl('text', { x: cx, y: ARR + PLOT + 15, 'text-anchor': 'middle', 'font-size': 10, fill: d === o.hoy ? COL.tinta : COL.tenue }, svg).textContent = etiquetaDia(d, o.hoy);
+      }
+      const hit = nsEl('rect', { x: x0, y: ARR, width: banda, height: PLOT, fill: 'transparent', class: 'hit', tabindex: 0 }, svg);
+      const filas = o.series.map(s => ({ color: s.color, label: s.label, valor: fmt(o.valor(d, s.key)) }));
+      if (o.series.length > 1) filas.push({ label: 'Total', valor: fmt(tot[i]) });
+      conectarTip(hit, cont, () => ({ x: cx, y: y(tot[i]) }), fechaCorta(d), filas, g);
+    });
+  }
+
+  // Patrón de 24 h: una fila por día (hoy arriba), tomas como puntos por tipo, sueño como franja.
+  function graficoPatron(cont, dias, hoy, porDia) {
+    const filasDias = dias.slice().reverse();
+    if (!filasDias.some(d => porDia[d].eventos.length || porDia[d].suenos.length)) { vacioGraf(cont, 'Todavía no hay tomas ni sueño en este período.'); return; }
+    cont.textContent = '';
+    const W = Math.max(260, Math.round(cont.getBoundingClientRect().width) || 340);
+    const IZQ = 42, DER = 10, ARR = 4, FILA = 22, EJE = 20;
+    const fondo = ARR + FILA * filasDias.length, H = fondo + EJE;
+    const svg = nsEl('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Patrón de 24 horas: tomas y sueño por día. El detalle está en la tabla.' }, cont);
+    const plotW = W - IZQ - DER, x = m => IZQ + (m / 1440) * plotW;
+    [0, 360, 720, 1080, 1440].forEach(m => {
+      const xx = Math.round(x(m)) + 0.5;
+      nsEl('line', { x1: xx, x2: xx, y1: ARR, y2: fondo, stroke: m === 0 ? COL.base : COL.grilla, 'stroke-width': 1 }, svg);
+      nsEl('text', { x: xx, y: fondo + 14, 'text-anchor': m === 0 ? 'start' : (m === 1440 ? 'end' : 'middle'), 'font-size': 10, fill: COL.tenue }, svg).textContent = (m / 60) + ' h';
+    });
+    const cyDe = i => ARR + FILA * i + FILA / 2;
+    filasDias.forEach((d, i) => {
+      const cy = cyDe(i);
+      nsEl('text', { x: IZQ - 6, y: cy + 3.5, 'text-anchor': 'end', 'font-size': 10, fill: d === hoy ? COL.tinta : COL.tenue }, svg).textContent = etiquetaDia(d, hoy);
+      porDia[d].suenos.forEach(s => {
+        const x1 = x(s.desde), x2 = x(s.hasta);
+        const franja = nsEl('rect', { x: x1, y: cy - 7, width: Math.max(2, x2 - x1), height: 14, rx: 3, fill: COL.sueno, 'fill-opacity': 0.4, class: 'franja' }, svg);
+        const hit = nsEl('rect', { x: Math.min(x1, (x1 + x2) / 2 - 8), y: cy - FILA / 2, width: Math.max(16, x2 - x1), height: FILA, fill: 'transparent', class: 'hit', tabindex: 0 }, svg);
+        conectarTip(hit, cont, () => ({ x: (x1 + x2) / 2, y: cy - 7 }), fechaCorta(d),
+          [{ color: COL.sueno, valor: duracion(Math.round(s.hasta - s.desde)), label: 'de sueño · ' + hhmm(s.desde) + '–' + (s.hasta >= 1440 ? '24:00' : hhmm(s.hasta)) }], franja);
+      });
+    });
+    // segunda pasada: los puntos quedan encima de las franjas, con anillo del color del fondo
+    filasDias.forEach((d, i) => {
+      const cy = cyDe(i);
+      porDia[d].eventos.forEach(ev => {
+        const cx = x(ev.min);
+        const punto = nsEl('circle', { cx: cx, cy: cy, r: 4.5, fill: ev.tipo.color, stroke: COL.superficie, 'stroke-width': 2, class: 'punto' }, svg);
+        const hit = nsEl('circle', { cx: cx, cy: cy, r: 12, fill: 'transparent', class: 'hit', tabindex: 0 }, svg);
+        conectarTip(hit, cont, () => ({ x: cx, y: cy - 6 }), fechaCorta(d) + ' · ' + hhmm(ev.min),
+          [{ color: ev.tipo.color, valor: typeof ev.onzas === 'number' ? ev.onzas + ' oz' : '', label: ev.tipo.label }], punto);
+      });
+    });
+  }
+
+  function leyenda(id, items) {
+    const cont = document.getElementById(id);
+    cont.textContent = '';
+    items.forEach(it => {
+      const s = document.createElement('span');
+      const i = document.createElement('i');
+      if (it.forma) i.className = it.forma;
+      i.style.background = it.color;
+      s.appendChild(i);
+      s.appendChild(document.createTextNode(it.label));
+      cont.appendChild(s);
+    });
+  }
+
+  function tabla(id, cabeceras, filas) {
+    const cont = document.getElementById(id);
+    cont.textContent = '';
+    const t = document.createElement('table');
+    const hr = t.createTHead().insertRow();
+    cabeceras.forEach(c => { const th = document.createElement('th'); th.textContent = c; hr.appendChild(th); });
+    const tb = t.createTBody();
+    filas.forEach(f => { const tr = tb.insertRow(); f.forEach(c => { tr.insertCell().textContent = String(c); }); });
+    cont.appendChild(t);
+  }
+
+  function pintarGraficos() {
+    if (document.getElementById('vistaGraficos').hidden) return;
+    document.querySelectorAll('.periodo').forEach(b => b.classList.toggle('on', Number(b.dataset.dias) === periodo));
+    const regs = (historia && historia.registros) || [];
+    const hoy = fechaHoy();
+    const dias = [];
+    for (let i = periodo - 1; i >= 0; i--) dias.push(sumarDias(hoy, -i));
+    const recientesPrimero = dias.slice().reverse();
+
+    const fuente = document.getElementById('fuenteGraf');
+    if (!webhook) fuente.textContent = 'Configura la URL del webhook en ⚙️ para ver los gráficos.';
+    else if (!historia) fuente.textContent = 'Cargando datos del Excel…';
+    else fuente.textContent = 'Datos del Excel · actualizado ' + hora(historia.cargado) +
+      (historia.total > regs.length ? ' · llegaron ' + regs.length + ' de ' + historia.total + ' registros' : '');
+
+    const porDia = agregar(regs, dias);
+    pintarKpis(porDia, dias, hoy);
+
+    leyenda('legTomas', TIPOS_TOMA);
+    graficoColumnas(document.getElementById('chTomas'), { dias: dias, hoy: hoy, series: TIPOS_TOMA, valor: (d, k) => porDia[d].tomas[k],
+      entero: true, unidad: '', titulo: 'Tomas por día', vacio: 'Todavía no hay tomas terminadas en este período.' });
+    tabla('tbTomas', ['Día', 'Pecho', 'L. materna', 'Fórmula', 'Total'], recientesPrimero.map(d => {
+      const x = porDia[d].tomas; return [fechaCorta(d), x.pecho, x.materna, x.formula, x.pecho + x.materna + x.formula]; }));
+
+    const conOnzas = TIPOS_TOMA.filter(t => t.key !== 'pecho');
+    leyenda('legOnzas', conOnzas);
+    graficoColumnas(document.getElementById('chOnzas'), { dias: dias, hoy: hoy, series: conOnzas, valor: (d, k) => porDia[d].onzas[k],
+      entero: false, unidad: 'oz', titulo: 'Onzas por día', vacio: 'Todavía no hay tomas con onzas en este período.' });
+    tabla('tbOnzas', ['Día', 'L. materna', 'Fórmula', 'Total'], recientesPrimero.map(d => {
+      const x = porDia[d].onzas; return [fechaCorta(d), num1(x.materna), num1(x.formula), num1(x.materna + x.formula)]; }));
+
+    leyenda('legPanales', TIPOS_PANAL);
+    graficoColumnas(document.getElementById('chPanales'), { dias: dias, hoy: hoy, series: TIPOS_PANAL, valor: (d, k) => porDia[d].panales[k],
+      entero: true, unidad: '', titulo: 'Pañales por día', vacio: 'Todavía no hay cambios de pañal en este período.' });
+    tabla('tbPanales', ['Día', 'Pipí', 'Popó', 'Ambos', 'Total'], recientesPrimero.map(d => {
+      const x = porDia[d].panales; return [fechaCorta(d), x.pipi, x.popo, x.ambos, x.pipi + x.popo + x.ambos]; }));
+
+    const diasConSueno = dias.filter(d => porDia[d].suenoMin > 0).length;
+    if (diasConSueno < 2) {
+      vacioGraf(document.getElementById('chSueno'), diasConSueno
+        ? 'Solo hay sueño registrado en 1 día. Usa "Se durmió" y "Se despertó" para ver la tendencia.'
+        : 'No hay sueño registrado en este período. Usa "Se durmió" y "Se despertó" para verlo aquí.');
+    } else {
+      graficoColumnas(document.getElementById('chSueno'), { dias: dias, hoy: hoy, series: [{ key: 'h', label: 'Horas de sueño', color: COL.sueno }],
+        valor: d => porDia[d].suenoMin / 60, entero: false, unidad: 'h', titulo: 'Horas de sueño por día', vacio: '' });
+    }
+    tabla('tbSueno', ['Día', 'Sueño'], recientesPrimero.map(d => [fechaCorta(d), porDia[d].suenoMin ? duracion(Math.round(porDia[d].suenoMin)) : '—']));
+
+    leyenda('legPatron', TIPOS_TOMA.map(t => ({ color: t.color, label: t.label, forma: 'punto' })).concat([{ color: COL.sueno, label: 'Sueño', forma: 'banda' }]));
+    graficoPatron(document.getElementById('chPatron'), dias, hoy, porDia);
+    tabla('tbPatron', ['Día', 'Tomas', 'Primera', 'Última', 'Sueño'], recientesPrimero.map(d => {
+      const ev = porDia[d].eventos.map(e => e.min).sort((a, b) => a - b);
+      return [fechaCorta(d), ev.length, ev.length ? hhmm(ev[0]) : '—', ev.length ? hhmm(ev[ev.length - 1]) : '—',
+              porDia[d].suenoMin ? duracion(Math.round(porDia[d].suenoMin)) : '—']; }));
+  }
+
   let toastTimer = null;
   function aviso(txt, ms) {
     const t = document.getElementById('toast');
@@ -698,6 +1172,7 @@
     vaciarPendientes(false);
     cargarUltimos(false);
     pintarProxima();
+    if (!document.getElementById('vistaGraficos').hidden) cargarHistoria(false);
   }
 
   // ───────── Arranque ─────────
@@ -706,6 +1181,15 @@
   vaciarPendientes(false);
   cargarUltimos(false);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) cargarUltimos(false); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !document.getElementById('vistaGraficos').hidden) cargarHistoria(false); });
+  document.addEventListener('pointerdown', e => {
+    if (e.target.closest && e.target.closest('.hit')) return;
+    document.querySelectorAll('.tip').forEach(t => { t.hidden = true; });
+    document.querySelectorAll('.hover').forEach(z => z.classList.remove('hover'));
+  });
+  let redimT = null;
+  window.addEventListener('resize', () => { clearTimeout(redimT); redimT = setTimeout(pintarGraficos, 150); });
+  if (leer(LS.vista, 'registro') === 'graficos') mostrarVista('graficos');
   setInterval(pintar, 30000);                       // refresca los contadores de duración
   setInterval(() => vaciarPendientes(false), 60000);
   window.addEventListener('online', () => vaciarPendientes(false));
